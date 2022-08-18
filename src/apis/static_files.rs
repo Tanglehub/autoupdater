@@ -3,7 +3,7 @@ use crate::apis::{DownloadApiTrait, SimpleTag};
 use crate::{Error, ReleaseAsset};
 use std::{cmp::Ordering, fmt::Display};
 use reqwest::header::HeaderMap;
-use serde::Deserialize;
+use serde::{Serialize, Deserialize};
 
 pub struct StaticFilesApi {
     url: Url,
@@ -11,16 +11,34 @@ pub struct StaticFilesApi {
     current_version: Option<String>
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Deserialize, Clone)]
+#[derive(Debug, PartialEq, Eq, Hash, Serialize, Deserialize, Clone)]
 pub struct StaticFileAsset {
     pub name: String,
     pub url: String
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Deserialize, Clone)]
+#[derive(Debug, PartialEq, Eq, Hash, Serialize, Deserialize, Clone)]
 pub struct StaticFileRelease {
     pub version: String,
     pub assets: Vec<StaticFileAsset>,
+}
+
+impl ReleaseAsset for StaticFileAsset {
+    fn get_name(&self) -> String {
+        self.name.clone()
+    }
+
+    fn get_download_url(&self) -> String {
+        self.url.clone()
+    }
+
+    fn download(
+        &self,
+        additional_headers: HeaderMap,
+        download_callback: Option<Box<dyn Fn(f32)>>,
+    ) -> Result<(), Error> {
+        crate::download(self, additional_headers, download_callback)
+    }
 }
 
 impl StaticFilesApi {
@@ -45,11 +63,6 @@ impl StaticFilesApi {
     }
 
     fn get_releases(&self) -> Result<Vec<StaticFileRelease>, Error> {
-        let api_url = format!(
-            "{}/releases.json",
-            self.url
-        );
-
         let mut headers = HeaderMap::new();
         headers.insert(
             header::USER_AGENT,
@@ -57,7 +70,7 @@ impl StaticFilesApi {
         );
 
         let response = reqwest::blocking::Client::new()
-            .get(&api_url)
+            .get(self.url.as_str())
             .headers(headers)
             .send()?;
 
@@ -87,8 +100,7 @@ impl StaticFilesApi {
         &self,
         sort_func: &Option<Sort>,
     ) -> Result<StaticFileRelease, Error> {
-        let mut releases = self.get_releases()?;
-
+        let releases = self.get_releases()?;
         let mut matching = self.match_releases(&releases);
         if matching.is_empty() {
             return Err(Error::no_release());
@@ -135,6 +147,7 @@ impl StaticFilesApi {
 
 impl DownloadApiTrait for StaticFilesApi {
     fn download<Asset: ReleaseAsset>(&self, asset: &Asset, download_callback: Option<Box<dyn Fn(f32)>>) -> Result<(), Error> {
-        todo!()
+        let headers = HeaderMap::new();
+        asset.download(headers, download_callback)
     }
 }
