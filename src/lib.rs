@@ -14,6 +14,9 @@ pub mod apis;
 pub mod error;
 mod macros;
 
+#[cfg(test)]
+mod tests;
+
 pub trait ReleaseAsset {
     /// Gets asset filename
     fn get_name(&self) -> String;

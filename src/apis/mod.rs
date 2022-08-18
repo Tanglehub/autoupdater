@@ -6,6 +6,7 @@ use regex::Regex;
 use crate::{error::Error, ReleaseAsset};
 
 pub mod github;
+pub mod static_files;
 
 lazy_static! {
     static ref SIMPLE_VERSION_REGEX: Regex = Regex::new(r"(\d+)\.(\d+)\.(\d+)").unwrap();
