@@ -59,8 +59,4 @@ pub async fn test_static_files() {
             ).unwrap();
         }
     });
-
-    loop {
-        tokio::time::sleep(Duration::from_secs(1)).await;
-    }
 }
